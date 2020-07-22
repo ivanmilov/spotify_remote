@@ -109,12 +109,26 @@ my_spotify_vol_down(){
     curl -X PUT "https://api.spotify.com/v1/me/player/volume?volume_percent=$level" -H "Authorization: Bearer $ACCESS_TOKEN"
 }
 
+my_spotify_play(){
+    curl -X PUT "https://api.spotify.com/v1/me/player/play" -H "Authorization: Bearer $ACCESS_TOKEN"
+}
+
+my_spotify_pause(){
+    curl -X PUT "https://api.spotify.com/v1/me/player/pause" -H "Authorization: Bearer $ACCESS_TOKEN"
+}
+
+my_spotify_play_pause(){
+    is_playing=$(my_spotify_get_player_info | jq .is_playing)
+    ${is_playing} && my_spotify_pause || my_spotify_play
+}
+
 usage()
 {
     cat <<END >&2
 USAGE: $0
     --play
     --pause
+    --playpause
     --next
     --prev
     --volup
@@ -127,8 +141,9 @@ while getopts ":hi-:" arg; do
     case "${arg}" in
         -)
             case "${OPTARG}" in
-                play) curl -X PUT "https://api.spotify.com/v1/me/player/play" -H "Authorization: Bearer $ACCESS_TOKEN" ;;
-                pause) curl -X PUT "https://api.spotify.com/v1/me/player/pause" -H "Authorization: Bearer $ACCESS_TOKEN" ;;
+                play) my_spotify_play ;;
+                pause) my_spotify_pause ;;
+                playpause) my_spotify_play_pause ;;
                 next) curl -X POST "https://api.spotify.com/v1/me/player/next" -H "Authorization: Bearer $ACCESS_TOKEN" ;;
                 prev) curl -X POST "https://api.spotify.com/v1/me/player/previous" -H "Authorization: Bearer $ACCESS_TOKEN" ;;
                 volup) my_spotify_vol_up ;;
