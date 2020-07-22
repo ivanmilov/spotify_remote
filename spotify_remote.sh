@@ -19,7 +19,7 @@ my_spotify_refresh_token()
                 https://accounts.spotify.com/api/token)
 
     local error=$(echo "$res" | jq .error)
-    if [ "$error" != "null" ]; then 
+    if [ "$error" != "null" ]; then
         echo "$error" | jq . >> $LOGS
         return 1
     else
@@ -70,7 +70,7 @@ my_spotify_get_player_info()
 {
     current=$(my_spotify_player_request)
 
-    my_spotify_error_handling "$current" 
+    my_spotify_error_handling "$current"
     if [ $? -gt 0 ]; then
         echo "{\"ERROR\":\"see $LOGS\"}"
         exit
@@ -80,25 +80,45 @@ my_spotify_get_player_info()
 
     if [ -z "$current" ]; then exit; fi
 
-    out=$(echo $current | jq '. | 
+    out=$(echo $current | jq '. |
             {name: .item.name,
              artists: .item.artists | [.[] | .name] | join(" & "),
-             is_playing: .is_playing, 
-             device: {name: .device.name, 
+             is_playing: .is_playing,
+             device: {name: .device.name,
                        type: .device.type,
                        volume: .device.volume_percent} }')
 
     echo $out
 }
 
-usage() 
+my_spotify_vol_up(){
+    level=$(my_spotify_get_player_info | jq .device.volume)
+
+    level=$(($level + 5))
+    if [ $level -gt 100 ]; then level=100; fi
+
+    curl -X PUT "https://api.spotify.com/v1/me/player/volume?volume_percent=$level" -H "Authorization: Bearer $ACCESS_TOKEN"
+}
+
+my_spotify_vol_down(){
+    level=$(my_spotify_get_player_info | jq .device.volume)
+
+    level=$(($level - 5))
+    if [ $level -lt 0 ]; then level=0; fi
+
+    curl -X PUT "https://api.spotify.com/v1/me/player/volume?volume_percent=$level" -H "Authorization: Bearer $ACCESS_TOKEN"
+}
+
+usage()
 {
     cat <<END >&2
-USAGE: $0 
+USAGE: $0
     --play
     --pause
     --next
     --prev
+    --volup
+    --voldown
     -i          # print json with current player info
 END
 }
@@ -111,6 +131,8 @@ while getopts ":hi-:" arg; do
                 pause) curl -X PUT "https://api.spotify.com/v1/me/player/pause" -H "Authorization: Bearer $ACCESS_TOKEN" ;;
                 next) curl -X POST "https://api.spotify.com/v1/me/player/next" -H "Authorization: Bearer $ACCESS_TOKEN" ;;
                 prev) curl -X POST "https://api.spotify.com/v1/me/player/previous" -H "Authorization: Bearer $ACCESS_TOKEN" ;;
+                volup) my_spotify_vol_up ;;
+                voldown) my_spotify_vol_down ;;
                 *) ;;
             esac;;
         h) usage ;;
