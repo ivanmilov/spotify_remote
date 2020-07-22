@@ -68,13 +68,14 @@ my_spotify_player_request(){
 
 my_spotify_get_player_info()
 {
-    current=$(my_spotify_player_request)
+    local current=$(my_spotify_player_request)
 
     my_spotify_error_handling "$current"
-    if [ $? -gt 0 ]; then
+    declare -r ret=$?
+    if [ $ret -gt 0 ]; then
         echo "{\"ERROR\":\"see $LOGS\"}"
         exit
-    elif [ $? -eq -1 ]; then
+    elif [ $ret -eq -1 ]; then
         current=$(my_spotify_player_request)
     fi
 
