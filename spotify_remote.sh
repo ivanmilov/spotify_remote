@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
 declare -r DIR=$(dirname ${BASH_SOURCE[0]})
+declare -ri DOREPEAT=42
 
 # get related env variables
 [[ -f ${DIR}/.env ]] && . ${DIR}/.env
+
+my_log(){
+    echo "$*" >> $LOGS
+}
 
 my_spotify_rotate_log()
 {
@@ -20,14 +25,14 @@ my_spotify_refresh_token()
 
     local error=$(echo "$res" | jq .error)
     if [ "$error" != "null" ]; then
-        echo "$error" | jq . >> $LOGS
+        my_log "$(echo "$error" | jq .)"
         return 1
     else
         ACCESS_TOKEN=$(echo "$res" | jq .access_token)
         echo $ACCESS_TOKEN | tr -d '\n' | tr -d '"' > $F_ACCESS_TOKEN
 
-        echo "New access token: $ACCESS_TOKEN" >> $LOGS
-        return -1 # new token -> repeat last request
+        my_log "New access token: $ACCESS_TOKEN"
+        return $DOREPEAT # new token -> repeat last request
     fi
     return 0
 }
@@ -42,17 +47,19 @@ my_spotify_error_handling()
 
     if [ "$error" != "null" ]; then
 
-        echo `date` >> $LOGS
+        my_log "`date`"
 
-        local message=`echo $error | jq .message`
+        local -r message=`echo $error | jq .message`
         if [ "$message" = '"The access token expired"' ]; then
-            echo -e "\trequest new access token ->" >> $LOGS
-            local ret=$(my_spotify_refresh_token)
-            echo -e "\t->request new access token" >> $LOGS
+            my_log "$(echo -e "\trequest new access token ->")"
+            my_spotify_refresh_token
+            local -r ret=$?
+            my_log "$(echo -e "\t->request new access token")"
             return $ret
         else
-            echo "Unknown error: " >> $LOGS
-            echo "$error" | jq . >> $LOGS
+            my_log "Unknown error: "
+            my_log "$(echo "$error" | jq . )"
+
         fi
         return 1
     fi
@@ -60,7 +67,7 @@ my_spotify_error_handling()
 }
 
 my_spotify_player_request(){
-    player=$(curl -s -X \
+    local -r player=$(curl -s -X \
         GET "https://api.spotify.com/v1/me/player" \
         -H "Authorization: Bearer $ACCESS_TOKEN")
     echo $player
@@ -71,17 +78,17 @@ my_spotify_get_player_info()
     local current=$(my_spotify_player_request)
 
     my_spotify_error_handling "$current"
-    declare -r ret=$?
+    local -r ret=$?
     if [ $ret -gt 0 ]; then
         echo "{\"ERROR\":\"see $LOGS\"}"
         exit
-    elif [ $ret -eq -1 ]; then
+    elif [ $ret -eq $DOREPEAT ]; then
         current=$(my_spotify_player_request)
     fi
 
     if [ -z "$current" ]; then exit; fi
 
-    out=$(echo $current | jq '. |
+    local -r out=$(echo $current | jq '. |
             {name: .item.name,
              artists: .item.artists | [.[] | .name] | join(" & "),
              is_playing: .is_playing,
@@ -93,18 +100,22 @@ my_spotify_get_player_info()
 }
 
 my_spotify_vol_up(){
-    level=$(my_spotify_get_player_info | jq .device.volume)
+    local -i level=$(my_spotify_get_player_info | jq .device.volume)
 
-    level=$(($level + 5))
+    if [ -z "$level" ]; then exit; fi
+
+    let "level += 5"
     if [ $level -gt 100 ]; then level=100; fi
 
     curl -X PUT "https://api.spotify.com/v1/me/player/volume?volume_percent=$level" -H "Authorization: Bearer $ACCESS_TOKEN"
 }
 
 my_spotify_vol_down(){
-    level=$(my_spotify_get_player_info | jq .device.volume)
+    local level=$(my_spotify_get_player_info | jq .device.volume)
 
-    level=$(($level - 5))
+    if [ -z "$level" ]; then exit; fi
+
+    let "level -= 5"
     if [ $level -lt 0 ]; then level=0; fi
 
     curl -X PUT "https://api.spotify.com/v1/me/player/volume?volume_percent=$level" -H "Authorization: Bearer $ACCESS_TOKEN"
@@ -119,7 +130,8 @@ my_spotify_pause(){
 }
 
 my_spotify_play_pause(){
-    is_playing=$(my_spotify_get_player_info | jq .is_playing)
+    local -r is_playing=$(my_spotify_get_player_info | jq .is_playing)
+    if [ -z "$is_playing" ]; then exit; fi
     ${is_playing} && my_spotify_pause || my_spotify_play
 }
 
