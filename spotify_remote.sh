@@ -79,11 +79,11 @@ my_spotify_get_player_info()
 
     my_spotify_error_handling "$current"
     local -r ret=$?
-    if [ $ret -gt 0 ]; then
+    if [ $ret -eq $DOREPEAT ]; then
+        current=$(my_spotify_player_request)
+    elif [ $ret -gt 0 ]; then
         echo "{\"ERROR\":\"see $LOGS\"}"
         exit
-    elif [ $ret -eq $DOREPEAT ]; then
-        current=$(my_spotify_player_request)
     fi
 
     if [ -z "$current" ]; then exit; fi
