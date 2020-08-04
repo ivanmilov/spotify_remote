@@ -41,7 +41,7 @@ my_spotify_refresh_token()
 
 my_spotify_error_handling()
 {
-    if [ -z "$1" ]; then return 0; fi
+    [ -z "$1" ] && return 0;
 
     my_spotify_rotate_log
 
@@ -88,7 +88,7 @@ my_spotify_get_player_info()
         exit
     fi
 
-    if [ -z "$current" ]; then exit; fi
+    [ -z "$current" ] && exit;
 
     local -r out=$(echo $current | jq '. |
             {name: .item.name,
@@ -104,10 +104,10 @@ my_spotify_get_player_info()
 my_spotify_vol_up(){
     local -i level=$(my_spotify_get_player_info | jq .device.volume)
 
-    if [ -z "$level" ]; then exit; fi
+    [ -z "$level" ] && exit;
 
     let "level += 5"
-    if [ $level -gt 100 ]; then level=100; fi
+    [ $level -gt 100 ] && level=100;
 
     curl -X PUT "https://api.spotify.com/v1/me/player/volume?volume_percent=$level" -H "Authorization: Bearer $ACCESS_TOKEN"
 }
@@ -115,10 +115,10 @@ my_spotify_vol_up(){
 my_spotify_vol_down(){
     local level=$(my_spotify_get_player_info | jq .device.volume)
 
-    if [ -z "$level" ]; then exit; fi
+    [ -z "$level" ] && exit;
 
     let "level -= 5"
-    if [ $level -lt 0 ]; then level=0; fi
+    [ $level -lt 0 ] && level=0;
 
     curl -X PUT "https://api.spotify.com/v1/me/player/volume?volume_percent=$level" -H "Authorization: Bearer $ACCESS_TOKEN"
 }
@@ -133,7 +133,7 @@ my_spotify_pause(){
 
 my_spotify_play_pause(){
     local -r is_playing=$(my_spotify_get_player_info | jq .is_playing)
-    if [ -z "$is_playing" ]; then exit; fi
+    [ -z "$is_playing" ] && exit;
     ${is_playing} && my_spotify_pause || my_spotify_play
 }
 
