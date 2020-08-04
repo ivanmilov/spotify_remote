@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+. lock.sh
+
 declare -r DIR=$(dirname ${BASH_SOURCE[0]})
 declare -ri DOREPEAT=42
 
