@@ -14,7 +14,7 @@ my_log(){
 
 my_spotify_rotate_log()
 {
-    find ${DIR}/LOGS -type f -size +1M -exec mv -v {} ${DIR}/LOGS_OLD \;
+    find ${DIR}/LOGS -type f -size +1M -exec mv -v {} ${DIR}/LOGS_`date -u +"%Y-%m-%d%H:%M:%S"` \;
 }
 
 my_spotify_refresh_token()
