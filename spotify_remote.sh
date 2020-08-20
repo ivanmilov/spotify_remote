@@ -94,6 +94,7 @@ my_spotify_get_player_info()
             {name: .item.name,
              artists: .item.artists | [.[] | .name] | join(" & "),
              is_playing: .is_playing,
+             image: .item.album.images | .[0] | .url,
              device: {name: .device.name,
                        type: .device.type,
                        volume: .device.volume_percent} }')
