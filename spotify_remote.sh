@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-. lock.sh
 
 declare -r DIR=$(dirname ${BASH_SOURCE[0]})
 declare -ri DOREPEAT=42
+
+. ${DIR}/lock.sh
 
 # get related env variables
 [[ -f ${DIR}/.env ]] && . ${DIR}/.env
