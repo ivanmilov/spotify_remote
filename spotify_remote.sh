@@ -148,11 +148,13 @@ USAGE: $0
     --prev
     --volup
     --voldown
+    -h          # print this message
     -i          # print json with current player info
+    -d          # print curl request for debug
 END
 }
 
-while getopts ":hi-:" arg; do
+while getopts ":hid-:" arg; do
     case "${arg}" in
         -)
             case "${OPTARG}" in
@@ -167,6 +169,7 @@ while getopts ":hi-:" arg; do
             esac;;
         h) usage ;;
         i) my_spotify_get_player_info;;
+        d) echo "curl -s -X GET https://api.spotify.com/v1/me/player -H \"Authorization: Bearer $ACCESS_TOKEN\"";;
         *) usage ;;
     esac
 done
