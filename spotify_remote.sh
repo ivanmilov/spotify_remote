@@ -4,7 +4,7 @@
 declare -r DIR=$(dirname ${BASH_SOURCE[0]})
 declare -ri DOREPEAT=42
 
-. ${DIR}/lock.sh
+declare is_one_instance=true
 
 # get related env variables
 [[ -f ${DIR}/.env ]] && . ${DIR}/.env
@@ -78,6 +78,8 @@ my_spotify_player_request(){
 
 my_spotify_get_player_info()
 {
+    [ $is_one_instance == false ] && . ${DIR}/lock.sh;
+
     local current=$(my_spotify_player_request)
 
     my_spotify_error_handling "$current"
@@ -153,11 +155,13 @@ USAGE: $0
     -h          # print this message
     -i          # print json with current player info
     -d          # print curl request for debug
+    -m          # multi instance(use with -i to avoid multiple call)
 END
 }
 
-while getopts ":hid-:" arg; do
+while getopts ":mhid-:" arg; do
     case "${arg}" in
+        m) is_one_instance=false ;;
         -)
             case "${OPTARG}" in
                 play) my_spotify_play ;;
