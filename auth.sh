@@ -6,7 +6,7 @@ usage() { echo "Usage: $0 [-a to get ACCESS_CODE (opened in browser)] [-t to get
 REDIRECT="http://localhost"
 SCOPE="user-read-currently-playing,user-read-playback-state,user-read-recently-played,user-modify-playback-state"
 ACCESS_CODE=""
-CLIENT_ID=$(cat CLIENT_ID)
+CLIENT_ID=$(cat CLIENT_ID.key)
 
 while getopts ":a:t" opt
 do
@@ -15,7 +15,7 @@ do
             chromium-browser "https://accounts.spotify.com/authorize?client_id=$CLIENT_ID&redirect_uri=$REDIRECT&response_type=code&scope=$SCOPE"
             sleep 2
             read -p "Enter access code: " ACCESS_CODE
-            echo $ACCESS_CODE | tr -d '\n' > ACCESS_CODE
+            echo $ACCESS_CODE | tr -d '\n' > ACCESS_CODE.key
             ;;
         t)
             echo "This option needs to be finished"
