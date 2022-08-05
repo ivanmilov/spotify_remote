@@ -6,7 +6,9 @@ IS_KDE="$3"
 COVER="$(mktemp)"
 COVER_PNG="$COVER".png
 
-[[ $IS_KDE == "1" ]] && . ~/.my_zsh/user_func.sh
+
+[[ $IS_KDE == "1" ]] && . /home/i/.my_zsh/user_func.sh
+
 
 curl "$COVER_URL" --output "$COVER" 2>/dev/null
 
